@@ -7,9 +7,9 @@ intelligence. Full spec: `README.md`. Read it.
 
 ## Current objective
 
-- Hold a clean map-first BlockBattery layout: Athens demand network as the hero
-  surface, contributor submission flow beneath it, and the downstream modeling
-  layer clearly secondary.
+- Hold a clean split repo: `frontend/` for the BlockBattery dashboard and
+  `backend/` for the platform API, optimization, ingestion, tests, and Sepolia
+  scaffold.
 
 ## Active owner
 
@@ -18,11 +18,11 @@ intelligence. Full spec: `README.md`. Read it.
 
 ## Last updated
 
-- 2026-04-30 05:43 EEST
+- 2026-04-30 06:08 EEST
 
 ## Working area
 
-- `components/`, `app/`, `lib/`, `STATUS.md`
+- `frontend/`, `backend/`, `STATUS.md`, `README.md`
 
 ## Blockers
 
@@ -187,6 +187,12 @@ intelligence. Full spec: `README.md`. Read it.
   to `BlockBattery` | `components/SubmissionHub.tsx`, `lib/platform-api.ts`,
   `app/page.tsx`, `STATUS.md` | `npm run lint` passed | next: browser QA on the
   contributor form and continue Sepolia skeleton handoff
+- 2026-04-30 06:08 EEST | codex | split the repo into `frontend/` and
+  `backend/`, removed unused data-flow / Leaflet leftovers, updated env/docs,
+  and fixed the rebake/test paths for the new structure | `frontend/`,
+  `backend/`, `.gitignore`, `README.md`, `STATUS.md` | `cd frontend && npm run lint`
+  passed, `cd backend && .venv/bin/python -m pytest` passed (19/19) | next:
+  browser QA or wire frontend mocks to live `/platform/*`
 
 ## Where we are
 
@@ -207,23 +213,24 @@ intelligence. Full spec: `README.md`. Read it.
 
 ```bash
 # Frontend demo
+cd frontend
 npm run dev                                  # → http://localhost:3000
-npm run build                                # ~2.4s, prod build sanity
+npm run build
 
 # Platform / scenario backend
+cd ../backend
 uv run uvicorn api.main:app --port 8765      # platform + scenario API
 uv run pytest                                # backend tests
 ```
 
-There is an old `next dev` orphaned on port 3000 (PID at session start was 397).
-HMR keeps it current; if it stops behaving, kill and restart.
-
 ## Scenario note
 
-`lib/scenarios-data.ts` is auto-generated from the FastAPI MILP solver.
-After editing `optim/*`, `api/scenarios.py`, `api/main.py`, or `BatterySpecs`:
+`frontend/lib/scenarios-data.ts` is auto-generated from the FastAPI MILP solver.
+After editing `backend/optim/*`, `backend/api/scenarios.py`,
+`backend/api/main.py`, or `BatterySpecs`:
 
 ```bash
+cd backend
 uv run uvicorn api.main:app --port 8765 &
 uv run python scripts/rebake_scenarios.py    # writes lib/scenarios-data.ts
 kill %1
@@ -232,54 +239,33 @@ kill %1
 The rebake script reads `SCENARIO_API_ROOT` env (default `http://127.0.0.1:8765`)
 so you can point it at a different port if `:8765` is busy.
 
-**If you change the per-interval shape in `api/main.py`, also update**
-`lib/api.ts::ScenarioInterval` and any consumer that reads new fields.
+**If you change the per-interval shape in `backend/api/main.py`, also update**
+`frontend/lib/api.ts::ScenarioInterval` and any consumer that reads new fields.
 Otherwise the dashboard will render `undefined.toFixed(...)` and crash.
 
 ## Architecture map
 
 ```
 data-scarcity/
-├── README.md                  # full project spec
+├── README.md                  # top-level repo guide
 ├── STATUS.md                  # this file
-├── pyproject.toml             # uv-managed
-├── .env.example               # ENTSOE_API_KEY=...
 │
-├── optim/
-│   ├── battery.py             # Battery specs + battery state model
-│   └── milp.py                # Downstream battery optimization / telemetry
-├── data/ingest/
-│   ├── entsoe.py              # Greek zone DAM/load/RES — key-aware
-│   └── weather.py             # Open-Meteo for ATH/SKG/HER
-├── api/
-│   ├── main.py                # FastAPI: /platform/* + /scenarios/*
-│   ├── platform.py            # Mocked submission / verification / token domain
-│   └── scenarios.py           # Downstream battery scenarios
-├── scripts/
-│   └── rebake_scenarios.py    # Pulls /scenarios + /scenarios/{name},
-│                              # writes lib/scenarios-data.ts
-├── tests/                     # battery + MILP + platform tests
-│
-├── public/image.png           # Athens underlay for illustrative node map
-├── app/page.tsx               # Map-first demo composition
-├── components/
-│   ├── AthensMapView.tsx      # Illustrative interactive node map
-│   ├── SubmissionHub.tsx      # Selected-site submit / proof flow
-│   ├── PlatformFlowView.tsx   # Compact downstream tech flow
-│   ├── EdgeBar.tsx            # Battery value summary
-│   ├── PriceActionChart.tsx   # Downstream scenario chart
-│   ├── IsometricMegapack.tsx  # Battery visual
-│   ├── DecisionPanel.tsx      # Battery reasoning card
-│   ├── SmartVsNaive.tsx       # Scenario comparison
-│   ├── ScenarioPicker.tsx     # Battery scenario picker
-│   └── TimeScrubber.tsx       # Battery playback control
-└── lib/
-    ├── platform-data.ts       # Mock Athens sites / submissions / tokens
-    ├── api.ts                 # Synchronous reads from baked battery scenarios
-    ├── baseline.ts            # Naive battery baseline
-    ├── decisions.ts           # Battery reasoning derivation
-    ├── interpolate.ts         # Fractional-time playback
-    └── scenarios-data.ts      # AUTO-GENERATED battery scenario bundle
+├── frontend/
+│   ├── .env.example           # NEXT_PUBLIC platform API root
+│   ├── app/                   # Next app shell + page
+│   ├── components/            # Map, submit flow, tech dashboard
+│   ├── lib/                   # Mock platform data + battery bundle
+│   ├── public/image.png       # Athens underlay for illustrative node map
+│   └── package.json           # frontend scripts / deps
+└── backend/
+    ├── .env.example           # ENTSOE + Sepolia env skeleton
+    ├── pyproject.toml         # uv-managed backend
+    ├── api/                   # FastAPI routes + platform domain
+    ├── optim/                 # battery model + MILP
+    ├── data/ingest/           # ENTSOE / weather collectors
+    ├── scripts/               # rebake helper
+    ├── tests/                 # pytest suite
+    └── hardhat/               # Sepolia receipt-token scaffold
 ```
 
 ## Conventions every agent should follow
@@ -318,9 +304,10 @@ that changes — revenue, price, MW, SoC, %.
 
 If a component answers none of those, cut it.
 
-**No backend in Phase 1.** The dashboard runs entirely off
-`lib/scenarios-data.ts`. Any new scenario must be added to `api/scenarios.py`
-in Python, solved through the API, and re-baked.
+**Platform state lives in the backend; battery playback is still baked.**
+The contributor flow talks to `/platform/*`. The downstream battery layer still
+renders from `frontend/lib/scenarios-data.ts` until a fuller live model hookup
+exists.
 
 **No new dependencies casually.** Recharts handles all charts. SVG handles
 the battery. No motion library yet, no Material UI, no Bootstrap, no chart
@@ -329,12 +316,12 @@ libs other than Recharts.
 ## What's next (in priority order)
 
 1. **Two more scenarios** queued: *peak demand spike*, *FCR-heavy day*.
-   Add to `api/scenarios.py`, re-bake. Skeletons commented in that file.
+   Add to `backend/api/scenarios.py`, re-bake. Skeletons commented in that file.
 2. **Replay flow polish** — judge picks a scenario, scrubber auto-plays
    end to end in ~10s, key moments highlighted.
 3. **Better capture-rate calc** — currently approximated client-side in
-   `lib/decisions.ts::approximateCaptureRate`. Should come from the actual
-   perfect-foresight oracle (`optim/baselines.py` per the README, not yet
+   `frontend/lib/decisions.ts::approximateCaptureRate`. Should come from the
+   actual perfect-foresight oracle (`backend/optim/baselines.py`, not yet
    implemented).
 4. **Ingest hookup** — needs an ENTSOE_API_KEY. Code is ready; user must
    supply key in `.env`.
@@ -345,15 +332,16 @@ libs other than Recharts.
 
 - Tailwind palette is the default; we don't have a custom config. Stick
   to neutral-50/100/.../900/950 and the named accent colors above.
-- `lib/scenarios-data.ts` is ~300 KB / 8k+ lines after the telemetry expansion.
-  Don't try to read it for understanding — read `api/scenarios.py`, `optim/milp.py`,
-  and `api/main.py` instead. To inspect a single field, `jq` against the API
+- `frontend/lib/scenarios-data.ts` is large after the telemetry expansion.
+  Don't try to read it for understanding — read `backend/api/scenarios.py`,
+  `backend/optim/milp.py`, and `backend/api/main.py` instead. To inspect a single field, `jq` against the API
   output is faster than scrolling the baked file.
 - The TS `ScenarioInterval` type and the Python interval payload must stay in
-  lockstep. Adding a field to `api/main.py` without updating `lib/api.ts` (or
+  lockstep. Adding a field to `backend/api/main.py` without updating
+  `frontend/lib/api.ts` (or
   rebaking) will surface as `undefined.toFixed(...)` runtime crashes in the UI.
 - The naive baseline is intentionally bad. Don't "improve" it. Its job is
   to lose so the optimization looks smart.
 - Decision rationale text is generated client-side. If you change MILP
-  behavior (e.g. add ancillary co-opt), update `lib/decisions.ts` to
+  behavior (e.g. add ancillary co-opt), update `frontend/lib/decisions.ts` to
   reflect the new logic, not just the data.

@@ -55,6 +55,45 @@ wheels = [
 ]
 
 [[package]]
+name = "blockbattery-backend"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "cvxpy" },
+    { name = "entsoe-py" },
+    { name = "fastapi" },
+    { name = "highspy" },
+    { name = "httpx" },
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "pyarrow" },
+    { name = "python-dotenv" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cvxpy", specifier = ">=1.5" },
+    { name = "entsoe-py", specifier = ">=0.6.16" },
+    { name = "fastapi", specifier = ">=0.115" },
+    { name = "highspy", specifier = ">=1.7" },
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "numpy", specifier = ">=2.0" },
+    { name = "pandas", specifier = ">=2.2" },
+    { name = "pyarrow", specifier = ">=16" },
+    { name = "python-dotenv", specifier = ">=1.0" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=8" }]
+
+[[package]]
 name = "certifi"
 version = "2026.4.22"
 source = { registry = "https://pypi.org/simple" }
@@ -297,45 +336,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/5d/45/c130091c2dfa061bb
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5a/ff/2e4eca3ade2c22fe1dea7043b8ee9dabe47753349eb1b56a202de8af6349/fastapi-0.136.1-py3-none-any.whl", hash = "sha256:a6e9d7eeada96c93a4d69cb03836b44fa34e2854accb7244a1ece36cd4781c3f", size = 117683, upload-time = "2026-04-23T16:49:42.437Z" },
 ]
-
-[[package]]
-name = "greek-battery-optim"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "cvxpy" },
-    { name = "entsoe-py" },
-    { name = "fastapi" },
-    { name = "highspy" },
-    { name = "httpx" },
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "pyarrow" },
-    { name = "python-dotenv" },
-    { name = "uvicorn", extra = ["standard"] },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "cvxpy", specifier = ">=1.5" },
-    { name = "entsoe-py", specifier = ">=0.6.16" },
-    { name = "fastapi", specifier = ">=0.115" },
-    { name = "highspy", specifier = ">=1.7" },
-    { name = "httpx", specifier = ">=0.27" },
-    { name = "numpy", specifier = ">=2.0" },
-    { name = "pandas", specifier = ">=2.2" },
-    { name = "pyarrow", specifier = ">=16" },
-    { name = "python-dotenv", specifier = ">=1.0" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8" }]
 
 [[package]]
 name = "h11"

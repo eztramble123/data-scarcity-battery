@@ -1,4 +1,4 @@
-"""Rebuild lib/scenarios-data.ts from the local FastAPI scenario endpoints."""
+"""Rebuild frontend/lib/scenarios-data.ts from the local FastAPI scenario endpoints."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import httpx
 
 
 API_ROOT = os.environ.get("SCENARIO_API_ROOT", "http://127.0.0.1:8765")
-OUT_PATH = Path("lib/scenarios-data.ts")
+OUT_PATH = Path(__file__).resolve().parents[2] / "frontend" / "lib" / "scenarios-data.ts"
 
 
 def main() -> None:

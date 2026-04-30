@@ -37,11 +37,13 @@ def test_canonical_hash_is_deterministic():
 
 
 def test_create_submission_uses_next_available_id():
+    existing_ids = [int(submission_id.split("-")[1]) for submission_id in platform._STORE["submissions"]]
+    expected_id = f"sub-{max(existing_ids) + 1:03d}"
     record = platform.create_submission(_payload())
-    assert record.submission_id == "sub-004"
+    assert record.submission_id == expected_id
     assert record.canonical_hash.startswith("0x")
     assert record.proof_hash.startswith("0x")
-    assert platform.list_sites()[-1].latest_submission_id == "sub-004"
+    assert platform.list_sites()[-1].latest_submission_id == expected_id
 
 
 def test_cannot_mint_before_verification():
