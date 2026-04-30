@@ -3,7 +3,7 @@
 // expensive N intervals, sized so the round trip uses the full energy span.
 // No SoC look-ahead, no degradation accounting, no scenario sampling.
 
-import type { BatterySpec, Scenario } from "./api";
+import type { Scenario } from "./api";
 
 const DT = 0.25;
 

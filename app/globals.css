@@ -1,26 +1,101 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #050505;
+  --foreground: #f3f4f6;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: "Avenir Next", "Segoe UI", sans-serif;
+  --font-mono: "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+@keyframes flowPulseX {
+  0% {
+    transform: translateX(-20%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(420%);
+    opacity: 0;
+  }
+}
+
+@keyframes flowPulseY {
+  0% {
+    transform: translateY(-25%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(420%);
+    opacity: 0;
+  }
+}
+
+@keyframes mapPulse {
+  0% {
+    transform: scale(0.65);
+    opacity: 0.4;
+  }
+  70% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}
+
+.flow-pulse-line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 22px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--pulse-accent, #38bdf8);
+  filter: drop-shadow(0 0 8px var(--pulse-accent, #38bdf8));
+  transform: translateY(-50%);
+  animation: flowPulseX 1.4s linear infinite;
+}
+
+.flow-pulse-vertical::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 6px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--pulse-accent, #38bdf8);
+  filter: drop-shadow(0 0 8px var(--pulse-accent, #38bdf8));
+  transform: translateX(-50%);
+  animation: flowPulseY 1.4s linear infinite;
+}
+
+.map-marker-pulse {
+  transform-origin: center;
+  animation: mapPulse 2.1s ease-out infinite;
 }

@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import httpx
 
 
-API_ROOT = "http://127.0.0.1:8765"
+API_ROOT = os.environ.get("SCENARIO_API_ROOT", "http://127.0.0.1:8765")
 OUT_PATH = Path("lib/scenarios-data.ts")
 
 

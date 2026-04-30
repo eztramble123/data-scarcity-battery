@@ -3,19 +3,21 @@
 import { useEffect, useRef } from "react";
 
 type Props = {
-  t: number;
-  setT: (t: number) => void;
+  tFloat: number;
+  setTFloat: (t: number) => void;
   intervalsCount: number;
   hour: number;
   playing: boolean;
   setPlaying: (p: boolean) => void;
 };
 
-const FPS = 12; // intervals per second when playing
+// Replay budget: ~10 seconds for the full 24-hour day (per README pitch beats).
+// 96 intervals / 10s = 9.6 intervals per second.
+const INTERVALS_PER_SEC = 9.6;
 
 export default function TimeScrubber({
-  t,
-  setT,
+  tFloat,
+  setTFloat,
   intervalsCount,
   hour,
   playing,
@@ -27,21 +29,20 @@ export default function TimeScrubber({
   useEffect(() => {
     if (!playing) {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      lastRef.current = 0;
       return;
     }
     const tick = (now: number) => {
       if (!lastRef.current) lastRef.current = now;
-      const dt = now - lastRef.current;
-      const stepMs = 1000 / FPS;
-      if (dt >= stepMs) {
-        lastRef.current = now;
-        const next = t + 1;
-        if (next >= intervalsCount) {
-          setPlaying(false);
-          return;
-        }
-        setT(next);
+      const dt = (now - lastRef.current) / 1000; // seconds
+      lastRef.current = now;
+      const next = tFloat + dt * INTERVALS_PER_SEC;
+      if (next >= intervalsCount - 1) {
+        setTFloat(intervalsCount - 1);
+        setPlaying(false);
+        return;
       }
+      setTFloat(next);
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -49,17 +50,17 @@ export default function TimeScrubber({
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       lastRef.current = 0;
     };
-  }, [playing, t, intervalsCount, setPlaying, setT]);
+  }, [playing, tFloat, intervalsCount, setPlaying, setTFloat]);
 
   const hh = Math.floor(hour);
-  const mm = Math.round((hour - hh) * 60);
+  const mm = Math.round((hour - hh) * 60) % 60;
   const stamp = `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 
   return (
     <div className="flex items-center gap-4 w-full">
       <button
         onClick={() => {
-          if (t >= intervalsCount - 1) setT(0);
+          if (tFloat >= intervalsCount - 1) setTFloat(0);
           setPlaying(!playing);
         }}
         className="w-10 h-10 flex items-center justify-center rounded-full bg-neutral-100 text-neutral-950 hover:bg-white transition-colors"
@@ -83,9 +84,9 @@ export default function TimeScrubber({
           min={0}
           max={intervalsCount - 1}
           step={1}
-          value={t}
+          value={Math.round(tFloat)}
           onChange={(e) => {
-            setT(Number(e.target.value));
+            setTFloat(Number(e.target.value));
             setPlaying(false);
           }}
           className="w-full accent-neutral-100"
@@ -99,7 +100,9 @@ export default function TimeScrubber({
         </div>
       </div>
 
-      <div className="font-mono text-lg w-20 text-right">{stamp}</div>
+      <div className="font-mono text-lg w-20 text-right tabular-nums">
+        {stamp}
+      </div>
     </div>
   );
 }

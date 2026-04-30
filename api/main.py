@@ -12,11 +12,25 @@ import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.platform import (
+    SubmissionCreate,
+    admit_submission_to_operator,
+    create_submission,
+    get_submission,
+    get_token,
+    list_sites,
+    list_submissions,
+    list_tokens,
+    mint_receipt_token,
+    operator_datasets,
+    platform_overview,
+    verify_submission,
+)
 from api.scenarios import SCENARIOS, T
 from optim.battery import BatterySpecs
 from optim.milp import solve_schedule
 
-app = FastAPI(title="Greek Battery Optimization", version="0.1.0")
+app = FastAPI(title="Greek Energy Receipt Network", version="0.2.0")
 
 # Dev: dashboard runs on :3000–3010 range; allow all in dev.
 app.add_middleware(
@@ -85,6 +99,80 @@ def _reason_code(
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/platform/overview")
+def get_platform_overview():
+    return platform_overview()
+
+
+@app.get("/platform/sites")
+def get_platform_sites():
+    return {"sites": list_sites()}
+
+
+@app.get("/platform/submissions")
+def get_platform_submissions():
+    return {"submissions": list_submissions()}
+
+
+@app.post("/platform/submissions")
+def post_platform_submission(payload: SubmissionCreate):
+    return create_submission(payload)
+
+
+@app.get("/platform/submissions/{submission_id}")
+def get_platform_submission(submission_id: str):
+    try:
+        return get_submission(submission_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"unknown submission: {submission_id}")
+
+
+@app.post("/platform/submissions/{submission_id}/verify")
+def post_platform_verification(submission_id: str):
+    try:
+        return verify_submission(submission_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"unknown submission: {submission_id}")
+
+
+@app.post("/platform/submissions/{submission_id}/mint")
+def post_platform_mint(submission_id: str):
+    try:
+        return mint_receipt_token(submission_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"unknown submission: {submission_id}")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.post("/platform/submissions/{submission_id}/admit")
+def post_platform_admit(submission_id: str):
+    try:
+        return admit_submission_to_operator(submission_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"unknown submission: {submission_id}")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.get("/platform/tokens")
+def get_platform_tokens():
+    return {"tokens": list_tokens()}
+
+
+@app.get("/platform/tokens/{token_id}")
+def get_platform_token(token_id: str):
+    try:
+        return get_token(token_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"unknown token: {token_id}")
+
+
+@app.get("/platform/operator/datasets")
+def get_platform_operator_datasets():
+    return operator_datasets()
 
 
 @app.get("/scenarios")

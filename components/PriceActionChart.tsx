@@ -17,7 +17,7 @@ import type { Scenario } from "@/lib/api";
 
 type Props = {
   scenario: Scenario;
-  cursorT: number;
+  cursorTFloat: number;
 };
 
 type Band = { x1: number; x2: number; color: string; opacity: number };
@@ -32,8 +32,6 @@ const COLORS = {
 } as const;
 
 const ACTION_THRESHOLD = 0.5;
-const DT = 0.25;
-
 function buildBands(scenario: Scenario): Band[] {
   // Merge contiguous same-action intervals into single bands.
   const out: Band[] = [];
@@ -99,7 +97,7 @@ function buildSurplusBands(scenario: Scenario): Band[] {
   return out;
 }
 
-export default function PriceActionChart({ scenario, cursorT }: Props) {
+export default function PriceActionChart({ scenario, cursorTFloat }: Props) {
   const data = useMemo(
     () =>
       scenario.intervals.map((iv) => ({
@@ -113,15 +111,35 @@ export default function PriceActionChart({ scenario, cursorT }: Props) {
   const actionBands = useMemo(() => buildBands(scenario), [scenario]);
   const surplusBands = useMemo(() => buildSurplusBands(scenario), [scenario]);
 
-  const cursorHour = scenario.intervals[cursorT]?.hour ?? 0;
-  const cursorPrice = scenario.intervals[cursorT]?.price_eur_mwh ?? 0;
+  const T = scenario.intervals.length;
+  const clamped = Math.max(0, Math.min(T - 1, cursorTFloat));
+  const i0 = Math.floor(clamped);
+  const i1 = Math.min(T - 1, i0 + 1);
+  const f = clamped - i0;
+  const lerp = (a: number, b: number) => a + (b - a) * f;
+  const cursorHour = lerp(
+    scenario.intervals[i0].hour,
+    scenario.intervals[i1].hour,
+  );
+  const cursorPrice = lerp(
+    scenario.intervals[i0].price_eur_mwh,
+    scenario.intervals[i1].price_eur_mwh,
+  );
+  const cursorP10 = lerp(
+    scenario.intervals[i0].price_p10_eur_mwh,
+    scenario.intervals[i1].price_p10_eur_mwh,
+  );
+  const cursorP90 = lerp(
+    scenario.intervals[i0].price_p90_eur_mwh,
+    scenario.intervals[i1].price_p90_eur_mwh,
+  );
 
   // Right-side annotation: avoid colliding with the chart edge.
   const annotateLeft = cursorHour > 16;
 
   return (
     <div className="relative w-full">
-      <ResponsiveContainer width="100%" height={340}>
+      <ResponsiveContainer width="100%" height={320}>
         <ComposedChart
           data={data}
           margin={{ top: 16, right: 18, bottom: 16, left: 8 }}
@@ -233,13 +251,11 @@ export default function PriceActionChart({ scenario, cursorT }: Props) {
         </ComposedChart>
       </ResponsiveContainer>
 
-      {/* Legend strip below the chart */}
-      <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 px-2 text-[11px] text-neutral-400 font-mono">
+      {/* Compact legend — only the colors that aren't self-evident */}
+      <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 px-2 text-[11px] text-neutral-500 font-mono">
         <Swatch color={COLORS.charge} label="buying" />
         <Swatch color={COLORS.discharge} label="selling" />
-        <Swatch color={COLORS.surplus} label="renewable surplus regime" />
-        <Swatch color={COLORS.price} label="market price" line />
-        <Swatch color="#a78bfa" label="forecast band" />
+        <Swatch color={COLORS.surplus} label="renewable surplus" />
       </div>
 
       {/* Floating callout at cursor */}
@@ -261,9 +277,7 @@ export default function PriceActionChart({ scenario, cursorT }: Props) {
           <span className="text-neutral-500 text-[10px] ml-1">/MWh</span>
         </div>
         <div className="text-[10px] text-neutral-500 mt-1">
-          forecast band · €
-          {scenario.intervals[cursorT]?.price_p10_eur_mwh.toFixed(0)} to €
-          {scenario.intervals[cursorT]?.price_p90_eur_mwh.toFixed(0)}
+          forecast band · €{cursorP10.toFixed(0)} to €{cursorP90.toFixed(0)}
         </div>
       </div>
     </div>

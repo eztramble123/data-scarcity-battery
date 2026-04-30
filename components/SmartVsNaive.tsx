@@ -16,30 +16,46 @@ import { naiveSchedule, smartCumulative } from "@/lib/baseline";
 
 type Props = {
   scenario: Scenario;
-  cursorT: number;
+  cursorTFloat: number;
 };
 
 const SMART_COLOR = "#84cc16"; // lime-500
 const NAIVE_COLOR = "#525252"; // neutral-600
 
-export default function SmartVsNaive({ scenario, cursorT }: Props) {
-  const { data, smartFinal, naiveFinal } = useMemo(() => {
+function lerp(a: number, b: number, f: number) {
+  return a + (b - a) * f;
+}
+
+export default function SmartVsNaive({ scenario, cursorTFloat }: Props) {
+  const { data, smartFinal, naiveFinal, smartCum, naiveCum } = useMemo(() => {
     const naive = naiveSchedule(scenario);
-    const smartCum = smartCumulative(scenario);
+    const sCum = smartCumulative(scenario);
+    const nCum = naive.intervals.map((iv) => iv.cumulative_revenue_eur);
     return {
       data: scenario.intervals.map((iv, i) => ({
         hour: iv.hour,
-        smart: smartCum[i],
-        naive: naive.intervals[i].cumulative_revenue_eur,
+        smart: sCum[i],
+        naive: nCum[i],
       })),
-      smartFinal: smartCum[smartCum.length - 1],
+      smartFinal: sCum[sCum.length - 1],
       naiveFinal: naive.total_revenue_eur,
+      smartCum: sCum,
+      naiveCum: nCum,
     };
   }, [scenario]);
 
-  const cursorHour = scenario.intervals[cursorT]?.hour ?? 0;
-  const smartAtCursor = data[cursorT]?.smart ?? 0;
-  const naiveAtCursor = data[cursorT]?.naive ?? 0;
+  const T = scenario.intervals.length;
+  const clamped = Math.max(0, Math.min(T - 1, cursorTFloat));
+  const i0 = Math.floor(clamped);
+  const i1 = Math.min(T - 1, i0 + 1);
+  const f = clamped - i0;
+  const cursorHour = lerp(
+    scenario.intervals[i0].hour,
+    scenario.intervals[i1].hour,
+    f,
+  );
+  const smartAtCursor = lerp(smartCum[i0], smartCum[i1], f);
+  const naiveAtCursor = lerp(naiveCum[i0], naiveCum[i1], f);
 
   const lift =
     naiveFinal > 0 ? ((smartFinal - naiveFinal) / naiveFinal) * 100 : 0;
@@ -140,9 +156,12 @@ export default function SmartVsNaive({ scenario, cursorT }: Props) {
         </LineChart>
       </ResponsiveContainer>
 
-      <div className="text-[11px] text-neutral-500 mt-2 font-mono">
-        At {String(Math.floor(cursorHour)).padStart(2, "0")}:00 — running lift{" "}
-        <span style={{ color: liftAtCursor >= 0 ? SMART_COLOR : "#ef4444" }}>
+      <div className="text-[11px] text-neutral-500 mt-2 font-mono tabular-nums">
+        running lift{" "}
+        <span
+          className="transition-colors duration-300"
+          style={{ color: liftAtCursor >= 0 ? SMART_COLOR : "#ef4444" }}
+        >
           {liftAtCursor >= 0 ? "+" : ""}
           {liftAtCursor.toFixed(0)}%
         </span>
